@@ -21,8 +21,7 @@ then
     echo "ERROR: Project named $1 already exists !"
 else
     echo "Creating project $1 ..."
-    mkdir $(pwd)/$1
-    make -C ../buildroot/ BR2_EXTERNAL=../external O=../builds/$1 ${CONFIG}_defconfig
+    make -C ../buildroot/ BR2_EXTERNAL=../external O=../projects/$1 ${CONFIG}_defconfig
     if [ $? -eq 0 ];
     then
 	echo "Project sucessfully created!"
