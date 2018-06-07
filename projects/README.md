@@ -1,4 +1,4 @@
-# builds directory
+# Project directory
 Use this directory to create per-project build directories. 
 
 All files created here will be ignored by git.
