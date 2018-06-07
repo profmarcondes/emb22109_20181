@@ -16,5 +16,7 @@ so you can use defconfig from Buildroot and from the external dir (configs).
 Examples:
 
    ./create.sh myProject
+   
    ./create.sh myProject raspberrypi3
+   
    ./create.sh myProject beaglebone
