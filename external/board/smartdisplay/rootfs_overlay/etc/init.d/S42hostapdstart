@@ -1,0 +1,6 @@
+#!/bin/sh
+#
+# Start Access Point...
+#
+
+hostapd -B /etc/hostapd/hostapd.conf
