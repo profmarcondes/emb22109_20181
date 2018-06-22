@@ -1,0 +1,11 @@
+Hello Friends ;)
+
+Inseri o arquivo bydan_defconfig @ /external/configs - que contêm a configuração do buildroot para gerar as imagens funcionais para o QT5
+
+Também há o novo diretorio root @ /external/board/smartdisplay/rootfs_overlay/root - que conterá os arquivos da aplicação
+
+Trick:> 
+1) ~/buildroot/emb22109_20181/projects/bydan/host/bin/qmake
+2) make
+3) stay happy ;)
+
