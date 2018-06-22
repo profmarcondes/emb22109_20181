@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Start Access Point...
+#
+#hostapd -B /etc/hostapd/hostapd.conf
+#
+
+CONFIG=/etc/hostapd/hostapd.conf
+
+[ -f $CONFIG ] || exit 0
+
+case "$1" in
+	start)
+		echo "Starting hostapd..."
+		hostapd -B "$CONFIG"
+		;;
+	*)
+		echo "Usage: $0 {start}"
+		exit 1
+esac
