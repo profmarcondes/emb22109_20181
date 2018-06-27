@@ -1,4 +1,0 @@
-run /host/usr/lib/qmake
-run make
-
-run to victory @bydan
