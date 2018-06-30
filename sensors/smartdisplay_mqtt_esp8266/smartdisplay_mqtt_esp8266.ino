@@ -16,8 +16,35 @@
   MIT license, all text above must be included in any redistribution
  ****************************************************/
 #include <ESP8266WiFi.h>
+#include <DHT.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_TSL2561_U.h>
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
+
+/*****************************DHT Defines*************************************/
+#define DHTPIN 2     // what pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
+
+/**************************TSL ID Definition**********************************/
+Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
+
+/*************************Internal Functions**********************************/
+void configureLumSensor(void)
+{
+  tsl.enableAutoRange(true);            /* Auto-gain ... switches automatically between 1x and 16x */
+  
+  /* Changing the integration time gives better sensor resolution (402ms = 16-bit data) */
+  tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
+
+  /* Update these values depending on what you've set above! */  
+  Serial.println("------------------------------------");
+  Serial.print  ("Gain:         "); Serial.println("Auto");
+  Serial.print  ("Timing:       "); Serial.println("13 ms");
+  Serial.println("------------------------------------");
+}
 
 /************************* WiFi Access Point *********************************/
 
@@ -42,10 +69,16 @@ WiFiClient client;
 Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME);
 
 /****************************** Feeds ***************************************/
-
-// Setup a feed called 'photocell' for publishing.
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
-Adafruit_MQTT_Publish photocell = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/photocell");
+
+// Setup a feed called 'temperature' for publishing.
+Adafruit_MQTT_Publish temperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/temperature");
+
+// Setup a feed called 'humidity' for publishing.
+Adafruit_MQTT_Publish humidity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");
+
+// Setup a feed called 'luminosity' for publishing.
+Adafruit_MQTT_Publish luminosity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/luminosity");
 
 // Setup a feed called 'onoff' for subscribing to changes.
 Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/onoff");
@@ -56,8 +89,19 @@ Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAM
 // for some reason (only affects ESP8266, likely an arduino-builder bug).
 void MQTT_connect();
 
+/*************************Global Variables***********************************/
+float hum;  //Stores humidity value
+float temp; //Stores temperature value
+
 void setup() {
   Serial.begin(115200);
+
+  // Init DHT
+  dht.begin();
+
+  // Setup the luminosity sensor gain and integration time
+  configureLumSensor();
+  
   delay(10);
 
   Serial.println(F("Adafruit MQTT demo"));
@@ -84,6 +128,14 @@ void setup() {
 uint32_t x=0;
 
 void loop() {
+  //Read data and store it to variables hum and temp
+  hum = dht.readHumidity();
+  temp= dht.readTemperature();
+
+  // Get a new sensor event 
+  sensors_event_t event;
+  tsl.getEvent(&event);
+    
   // Ensure the connection to the MQTT server is alive (this will make the first
   // connection and automatically reconnect when disconnected).  See the MQTT_connect
   // function definition further below.
@@ -101,10 +153,29 @@ void loop() {
   }
 
   // Now we can publish stuff!
-  Serial.print(F("\nSending photocell val "));
-  Serial.print(x);
+  Serial.print(F("\nSending temperature val "));
+  Serial.print(temp);
+  Serial.println(" Celsius");
   Serial.print("...");
-  if (! photocell.publish(x++)) {
+  if (! temperature.publish(temp)) {
+    Serial.println(F("Failed"));
+  } else {
+    Serial.println(F("OK!"));
+  }
+  Serial.print(F("\nSending humidity val "));
+  Serial.print(hum);
+  Serial.print(" %");
+  Serial.print("...");
+  if (! humidity.publish(hum)) {
+    Serial.println(F("Failed"));
+  } else {
+    Serial.println(F("OK!"));
+  }
+  Serial.print(F("\nSending luminosity val "));
+  Serial.print(event.light);
+  Serial.print(" lux");
+  Serial.print("...");
+  if (! luminosity.publish(event.light)) {
     Serial.println(F("Failed"));
   } else {
     Serial.println(F("OK!"));
