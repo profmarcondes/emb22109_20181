@@ -1,0 +1,4 @@
+config BR2_PACKAGE_QTMQTT
+	bool "qtmqtt"
+	help 
+		A QT Module.

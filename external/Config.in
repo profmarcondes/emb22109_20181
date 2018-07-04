@@ -1,1 +1,2 @@
-#source "$BR2_EXTERNAL_EMB22109_PATH/package/package1/Config.in"
+#menu "Smartdisplay Libraries"
+source "$BR2_EXTERNAL_EMB22109_PATH/package/qtmqtt/Config.in"
