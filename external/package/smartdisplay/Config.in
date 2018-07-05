@@ -1,0 +1,7 @@
+config BR2_PACKAGE_SMARTDISPLAY
+	bool "smartdisplay"
+	select BR2_PACKAGE_QT5BASE
+	select BR2_PACKAGE_QT5_VERSION_LATEST
+	select BR2_PACKAGE_QTMQTT
+	help 
+		Main Smartdisplay interface application.

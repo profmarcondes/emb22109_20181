@@ -1,0 +1,18 @@
+SMARTDISPLAY_SITE = $(BR2_EXTERNAL_EMB22109_PATH)/apps/smartdisplay
+SMARTDISPLAY_SITE_METHOD=local
+SMARTDISPLAY_DEPENDENCIES = qtmqtt
+SMARTDISPLAY_DEPENDENCIES += qt5base
+
+define SMARTDISPLAY_CONFIGURE_CMDS
+	(cd $(@D); $(TARGET_MAKE_ENV) $(HOST_DIR)/bin/qmake)
+endef
+
+define SMARTDISPLAY_BUILD_CMDS
+	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D)
+endef
+
+define SMARTDISPLAY_INSTALL_TARGET_CMDS
+	cp -dpf $(@D)/smartdisplay $(TARGET_DIR)/usr/bin/
+endef
+
+$(eval $(generic-package))
