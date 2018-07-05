@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Images/configure_button.png</file>
+        <file>Images/temp_icon.png</file>
+        <file>Images/hum_icon.png</file>
+        <file>Images/lumen_icon.png</file>
+        <file>Images/on_icon.png</file>
+        <file>Images/off_icon.png</file>
+        <file>Images/dimer_icon.png</file>
+    </qresource>
+</RCC>
