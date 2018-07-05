@@ -23,6 +23,10 @@
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
 
+/**************************LED PWM Pin Define*********************************/
+#define LED_PIN 15
+#define ONOFF_PIN 0
+
 /*****************************DHT Defines*************************************/
 #define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
@@ -55,7 +59,7 @@ void configureLumSensor(void)
 
 #define AIO_SERVER      "192.168.2.1"
 #define AIO_SERVERPORT  1883                   // use 8883 for SSL
-#define AIO_USERNAME    "sensor"
+#define AIO_USERNAME    "home"
 #define AIO_KEY         "...your AIO key..."
 
 /************ Global State (you don't need to change this!) ******************/
@@ -72,16 +76,21 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME);
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
 
 // Setup a feed called 'temperature' for publishing.
-Adafruit_MQTT_Publish temperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/temperature");
+Adafruit_MQTT_Publish temperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/temp");
 
 // Setup a feed called 'humidity' for publishing.
 Adafruit_MQTT_Publish humidity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");
 
 // Setup a feed called 'luminosity' for publishing.
-Adafruit_MQTT_Publish luminosity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/luminosity");
+Adafruit_MQTT_Publish luminosity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/lumen");
 
 // Setup a feed called 'onoff' for subscribing to changes.
 Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/onoff");
+Adafruit_MQTT_Publish onoff_pub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/onoff");
+
+// Setup a feed called 'slider' for subscribing to changes.
+Adafruit_MQTT_Subscribe slider = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/dimer");
+Adafruit_MQTT_Publish slider_pub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dimer");
 
 /*************************** Sketch Code ************************************/
 
@@ -91,7 +100,7 @@ void MQTT_connect();
 
 /*************************Global Variables***********************************/
 float hum;  //Stores humidity value
-float temp; //Stores temperature value
+float temp; //Stores temperature value  
 
 void setup() {
   Serial.begin(115200);
@@ -101,6 +110,9 @@ void setup() {
 
   // Setup the luminosity sensor gain and integration time
   configureLumSensor();
+
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(ONOFF_PIN, OUTPUT);
   
   delay(10);
 
@@ -121,8 +133,25 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: "); Serial.println(WiFi.localIP());
 
+  // Ensure the connection to the MQTT server is alive (this will make the first
+  // connection and automatically reconnect when disconnected).  See the MQTT_connect
+  // function definition further below.
+  MQTT_connect();
+
   // Setup MQTT subscription for onoff feed.
   mqtt.subscribe(&onoffbutton);
+  mqtt.subscribe(&slider);
+  
+  if (! slider_pub.publish(0)) {
+    Serial.println(F("Failed"));
+  } else {
+    Serial.println(F("OK!"));
+  }
+  if (! onoff_pub.publish(0)) {
+    Serial.println(F("Failed"));
+  } else {
+    Serial.println(F("OK!"));
+  }
 }
 
 uint32_t x=0;
@@ -135,12 +164,8 @@ void loop() {
   // Get a new sensor event 
   sensors_event_t event;
   tsl.getEvent(&event);
-    
-  // Ensure the connection to the MQTT server is alive (this will make the first
-  // connection and automatically reconnect when disconnected).  See the MQTT_connect
-  // function definition further below.
-  MQTT_connect();
 
+  MQTT_connect();
   // this is our 'wait for incoming subscription packets' busy subloop
   // try to spend your time here
 
@@ -149,6 +174,17 @@ void loop() {
     if (subscription == &onoffbutton) {
       Serial.print(F("Got: "));
       Serial.println((char *)onoffbutton.lastread);
+      if (onoffbutton.lastread[0] == '0'){
+        digitalWrite(ONOFF_PIN, 1);
+      } else if (onoffbutton.lastread[0] == '1'){
+        digitalWrite(ONOFF_PIN, 0);
+      }
+      //digitalWrite(ONOFF_PIN, (unsigned int)onoffbutton.lastread);
+    }
+    if (subscription == &slider) {
+      Serial.print(F("Got: "));
+      Serial.println((char *)slider.lastread);
+      analogWrite(LED_PIN, 1023*100/(atoi((char*)slider.lastread)));
     }
   }
 
@@ -180,6 +216,8 @@ void loop() {
   } else {
     Serial.println(F("OK!"));
   }
+
+  
 
   // ping the server to keep the mqtt connection alive
   // NOT required if you are publishing once every KEEPALIVE seconds
